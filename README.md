@@ -13,3 +13,7 @@ conda install -c conda-forge rdkit
 pip install graphein
 pip install fair-esm
 ```
+## Train
+```bash
+python metaentry.py  --batch_size=4  --num_workers=16 --num_inner_steps=5 --k_query=50
+```
