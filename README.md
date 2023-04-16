@@ -25,7 +25,7 @@ Multiple hyperparameters can be selected in meta.py.
 ```bash
 python metaentry.py  --batch_size=4  --num_workers=16 --num_inner_steps=5 --k_query=50
 ```
-## Predicte
+## Prediction
 ```bash
 python metaentry.py  --test --num_workers=16 --k_query=50
 ```
