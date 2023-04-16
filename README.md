@@ -30,4 +30,4 @@ python metaentry.py  --batch_size=4  --num_workers=16 --num_inner_steps=5 --k_qu
 python metaentry.py  --test --num_workers=16 --k_query=50
 ```
 ## Online service
-Online retrieval service and benchmark datasets are in here(http://www.csbio.sjtu.edu.cn/bioinf/ZeroBind/index.html).
+Online retrieval service and benchmark datasets are in [here](http://www.csbio.sjtu.edu.cn/bioinf/ZeroBind/index.html).
