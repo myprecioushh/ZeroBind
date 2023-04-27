@@ -1,5 +1,5 @@
 # ZeroBind
-This is the implementation of ZeroBind: A protein-specific meta-learning framework with subgraph matching for binding predictions of unseen proteins and drugs.
+This is the implementation of ZeroBind: A protein-specific zero-shot predictor with subgraph matching for drug-target interactions.
 ## Installation
 ZeroBind is built on Python3, we recommend using a virtual conda environment as enviroment management for the installation of ZeroBind and its dependencies. The virtual environment can be created as follows:
 ```bash
