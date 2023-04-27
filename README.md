@@ -25,10 +25,12 @@ Multiple hyperparameters can be selected in meta.py.
 ```bash
 python metaentry.py  --batch_size=4  --num_workers=16 --num_inner_steps=5 --k_query=50
 ```
+After model training starts, the progress bar will be automatically shown on your command line， and the trained model parameters will be saved in "checkpoints" dictory for every epoch.
 ## Prediction
 ```bash
-python metaentry.py  --test --num_workers=16 --k_query=50
+python metaentry.py  --test --num_workers=16 --k_query=50 --checkpoint_path="your_model_path"
 ```
+After predicting with your well trained model, the predicting output will be saved in a "txt" file and the prediction metrics will be shown on your command line.
 ## Online service and benchmark datasets
 Online retrieval service and benchmark datasets are in [(http://www.csbio.sjtu.edu.cn/bioinf/ZeroBind/)](http://www.csbio.sjtu.edu.cn/bioinf/ZeroBind/index.html).
 
