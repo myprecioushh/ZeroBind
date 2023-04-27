@@ -16,7 +16,7 @@ import os
 from torch.nn import LayerNorm
 from protein_pretrain import pretrain_init
 from torchvision.ops import sigmoid_focal_loss
-from graphormer_model import forwardmodel, MultiHeadAttention, update_params, LSLRGradientDescentLearningRule, plot
+from base_model import forwardmodel, MultiHeadAttention, update_params, LSLRGradientDescentLearningRule, plot
 from torch_geometric.loader import DataLoader
 from torch_geometric.data import Data
 
