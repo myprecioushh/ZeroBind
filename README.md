@@ -31,3 +31,6 @@ python metaentry.py  --test --num_workers=16 --k_query=50
 ```
 ## Online service
 Online retrieval service and benchmark datasets are in [here](http://www.csbio.sjtu.edu.cn/bioinf/ZeroBind/index.html).
+
+## License
+This project is covered under the Apache 2.0 License.
