@@ -3,7 +3,7 @@ This is the implementation of ZeroBind: A protein-specific zero-shot predictor w
 ## Installation
 ZeroBind is built on Python3, we recommend using a virtual conda environment as enviroment management for the installation of ZeroBind and its dependencies. The virtual environment can be created as follows:
 ```bash
-conda create -n your_environment python=3.9
+conda create -n your_environment python==3.9
 conda activate your_environment
 ```
 Download the source code of ZeroBind from GitHub:
