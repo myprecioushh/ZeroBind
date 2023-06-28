@@ -18,7 +18,7 @@ class Meta(pl.LightningModule):
         parser.add_argument('--attention_dropout_rate', type=float, default=0.1)
         parser.add_argument('--num_heads', type=int, default=8)
         parser.add_argument('--meta_lr', type=float, default=1e-5)
-        parser.add_argument('--task_lr', type=float, default=1e-3)
+        parser.add_argument('--task_lr', type=float, default=1e-4)
         parser.add_argument('--few_lr', type=float, default=0.01)
         parser.add_argument('--total_epoch', type=int, default=500)
         parser.add_argument('--few_epoch', type=int, default=10)
@@ -31,11 +31,11 @@ class Meta(pl.LightningModule):
         parser.add_argument('--k_shot', type=int, default=5)
         parser.add_argument('--k_query', type=int, default=50)
         parser.add_argument('--val_shot', type=int, default=50)
-        parser.add_argument('--num_workers', type=int, default=16)
-        parser.add_argument('--batch_size', type=int, default=2)
+        parser.add_argument('--num_workers', type=int, default=0)
+        parser.add_argument('--batch_size', type=int, default=4)
 
         parser.add_argument('--project_name', type=str, default="GCN_maml")
         parser.add_argument('--n_layers', type=int, default=6)
 
-        parser.add_argument('--checkpoint_path', type=str, default="./final_protein_improve+checkpoint/-epoch=021-zero_auroc=0.7509-zero_loss=0.3684-.ckpt")
+        parser.add_argument('--checkpoint_path', type=str, default="/amax/yxwang/GCN/meta-Graphormer-update/graphormer/review_V8+checkpoint/-epoch=110-zero_auroc=0.7939-zero_loss=0.2769-.ckpt")
         return parent_parser

@@ -5,15 +5,20 @@ from features import atom_to_feature_vector,bond_to_feature_vector
 from rdkit import Chem
 import numpy as np
 import csv
+import pickle
+import os
+from tqdm import tqdm
+def smiles2graph(smiles_string,inchy_key):
 
-
-def smiles2graph(smiles_string):
-    """
-    Converts SMILES string to graph Data object
-    :input: SMILES string (str)
-    :return: graph object
-    """
-
+    file = "./pickle_molecule_graph/" + inchy_key + ".pkl"
+    if os.path.exists(file):
+        with open(file, "rb") as f:
+            try:
+                graph = pickle.load(f)
+            except:
+                print(file)
+                exit()
+        return graph
     mol = Chem.MolFromSmiles(smiles_string)
 
     # atoms
@@ -57,19 +62,13 @@ def smiles2graph(smiles_string):
     graph['edge_feat'] = torch.tensor(edge_attr)
     graph['node_feat'] = x
     graph['num_nodes'] = len(x)
-
+    with open("./pickle_molecule_graph/"+inchy_key+".pkl","wb")as f:
+        pickle.dump(graph, f)
     return graph
 
 class MoleculeDataset:
     def __init__(self,molecule_graphs,molecule_labels,molecule_ID,names,smiles=None):
-        """
-        Inputs:
-            imgs - Numpy array of shape [N,32,32,3] containing all images.
-            targets - PyTorch array of shape [N] containing all labels.
-            img_transform - A torchvision transformation that should be applied
-                            to the images before returning. If none, no transformation
-                            is applied.
-        """
+
         super().__init__()
 
         self.molecule_graphs = molecule_graphs
@@ -92,34 +91,6 @@ class MoleculeDataset:
 
     def __len__(self):
         return len(self.molecule_graphs)
-
-'''class MoleculeDataset:
-    def __init__(self,molecule_graphs,molecule_labels,molecule_ID,names):
-        """
-        Inputs:
-            imgs - Numpy array of shape [N,32,32,3] containing all images.
-            targets - PyTorch array of shape [N] containing all labels.
-            img_transform - A torchvision transformation that should be applied
-                            to the images before returning. If none, no transformation
-                            is applied.
-        """
-        super().__init__()
-
-        self.molecule_graphs = molecule_graphs
-        self.molecule_labels = molecule_labels
-        self.molecule_ID=molecule_ID
-        self.names=names
-
-    def __getitem__(self,idx):
-        graph=preprocess_item(self.molecule_graphs[idx])
-        graph['idx']=idx
-        label= self.molecule_labels[idx]
-        name=self.names[idx]
-        return graph, label,name
-
-    def __len__(self):
-        return len(self.molecule_graphs)'''
-
 
 def convert_to_single_emb(x, offset=512):
     feature_num = x.size(1) if len(x.size()) > 1 else 1
@@ -175,23 +146,18 @@ def train_molecules():
     np.random.seed(42)
     molecule_graphs={}
     molecule_labels={}
-    with open("./protein_train.csv",'r')as f:
+    with open("../scaffold_split/protein_train.csv",'r')as f:
         reader=csv.reader(f)
         next(reader)
-        for m,row in enumerate(reader):
+        for m,row in tqdm(enumerate(reader)):
             if row[0] not in molecule_graphs.keys():
                 molecule_graphs[row[0]]=[]
                 molecule_labels[row[0]]=[]
-            if float(row[4])<1000:
+            if float(row[5])==1:
                 molecule_labels[row[0]].append(1)
-            elif float(row[4])>=100000:
+            elif float(row[5])==0:
                 molecule_labels[row[0]].append(0)
-            else:
-                continue
-            try:
-                graph = smiles2graph(row[1])
-            except:
-                continue
+            graph = smiles2graph(row[1],row[2])
 
             molecule_graphs[row[0]].append(graph)
 
@@ -212,20 +178,18 @@ def train_molecules():
 
     molecule_graphs={}
     molecule_labels={}
-    with open("./protein_seen_node.csv",'r')as f1:
+    with open("../scaffold_split/protein_inductive.csv",'r')as f1:
         reader=csv.reader(f1)
         next(reader)
-        for row in reader:
+        for row in tqdm(reader):
             if row[0] not in molecule_graphs.keys():
                 molecule_graphs[row[0]]=[]
                 molecule_labels[row[0]]=[]
-            if float(row[4])<1000:
+            if float(row[5]) == 1:
                 molecule_labels[row[0]].append(1)
-            elif float(row[4])>=100000:
+            elif float(row[5]) == 0:
                 molecule_labels[row[0]].append(0)
-            else:
-                continue
-            graph = smiles2graph(row[1])
+            graph = smiles2graph(row[1],row[2])
             molecule_graphs[row[0]].append(graph)
 
         valid_molecule_ID={}
@@ -247,10 +211,10 @@ def train_molecules():
 def test_molecules():
     molecule_graphs = {}
     molecule_labels = {}
-    with open("./protein_inductive.csv", 'r') as f1:
+    with open("../scaffold_split/protein_transductive.csv", 'r') as f1:
         reader = csv.reader(f1)
         next(reader)
-        for row in reader:
+        for row in tqdm(reader):
             if row[0] not in molecule_graphs.keys():
                 molecule_graphs[row[0]] = []
                 molecule_labels[row[0]] = []
@@ -260,128 +224,22 @@ def test_molecules():
                 molecule_labels[row[0]].append(0)
             else:
                 continue
-            graph = smiles2graph(row[1])
+            graph = smiles2graph(row[1],row[2])
             molecule_graphs[row[0]].append(graph)
 
-        test_molecule_ID = {}
-        test_molecule_graphs = []
-        test_molecule_labels = []
-        test_names = []
-        start_index = 0
-        for test_name in molecule_graphs.keys():
-            test_molecule_ID[test_name] = [i for i in range(start_index, start_index + len(molecule_graphs[test_name]))]
-            start_index = start_index + len(molecule_graphs[test_name])
-            test_names.extend([test_name for _ in range(len(molecule_graphs[test_name]))])
-            test_molecule_graphs.extend(molecule_graphs[test_name])
-            test_molecule_labels.extend(molecule_labels[test_name])
+    test_molecule_ID = {}
+    test_molecule_graphs = []
+    test_molecule_labels = []
+    test_names = []
+    start_index = 0
+    for test_name in molecule_graphs.keys():
+        test_molecule_ID[test_name] = [i for i in range(start_index, start_index + len(molecule_graphs[test_name]))]
+        start_index = start_index + len(molecule_graphs[test_name])
+        test_names.extend([test_name for _ in range(len(molecule_graphs[test_name]))])
+        test_molecule_graphs.extend(molecule_graphs[test_name])
+        test_molecule_labels.extend(molecule_labels[test_name])
 
-        test_set = MoleculeDataset(test_molecule_graphs, test_molecule_labels, test_molecule_ID, test_names)
-    f1.close()
+    test_set = MoleculeDataset(test_molecule_graphs, test_molecule_labels, test_molecule_ID, test_names)
     return test_set
 
-def test_explan():
-    molecule_graphs = {}
-    molecule_labels = {}
-    PDB_IDs, affinitys = [], []
-    with open("./INDEX_general_PL.2020", "r") as f:
-        for i, line in enumerate(f.readlines()):
-            if i >= 6:
-                data = line.split(" ")
-                PDB_ID, affinity = data[0], data[3]
-                try:
-                    affinity = affinity[affinity.index("="):]
-                except:
-                    continue
-                mol = Chem.MolFromMolFile("/amax/yxwang/GCN/v2020-other-PL/"+PDB_ID+"/"+PDB_ID+"_ligand.sdf")
-                smi = Chem.MolToSmiles(mol)
-                molecule_graphs[PDB_ID]=smiles2graph(smi)
-                molecule_labels[PDB_ID]=1
-                PDB_IDs.append(PDB_ID)
-                affinitys.append(affinity)
 
-    valid_molecule_ID = {}
-    valid_molecule_graphs = []
-    valid_molecule_labels = []
-    valid_names = []
-    start_index = 0
-    for valid_name in molecule_graphs.keys():
-        valid_molecule_ID[valid_name] = [i for i in range(start_index, start_index + len(molecule_graphs[valid_name]))]
-        start_index = start_index + len(molecule_graphs[valid_name])
-        valid_names.extend([valid_name for _ in range(len(molecule_graphs[valid_name]))])
-        valid_molecule_graphs.extend(molecule_graphs[valid_name])
-        valid_molecule_labels.extend(molecule_labels[valid_name])
-
-    explan_set = MoleculeDataset(valid_molecule_graphs, valid_molecule_labels, valid_molecule_ID, valid_names)
-    return explan_set
-'''def protein2emb_encoder(x):
-    max_p = 545
-    t1 = pbpe.process_line(x).split()  # split
-    try:
-        i1 = np.asarray([words2idx_p[i] for i in t1])  # index
-    except:
-        i1 = np.array([0])
-
-    l = len(i1)
-
-    if l < max_p:
-        i = np.pad(i1, (0, max_p - l), 'constant', constant_values = 0)
-        input_mask = ([1] * l) + ([0] * (max_p - l))
-    else:
-        i = i1[:max_p]
-        input_mask = [1] * max_p
-
-    return i, np.asarray(input_mask)
-
-def protein_interaction(protein_name,df_interaction):
-    df_interaction=df_interaction.loc[df_interaction["proteinA"].isin(protein_name) and df_interaction["proteinB"].isin(protein_name)]
-
-    edge_index1=[]
-    edge_index2=[]
-    edge_index=[]
-    for index, row in df_interaction.iterrows():
-        edge_index1.append(protein_name.index(row[0]))
-        edge_index2.append(protein_name.index(row[1]))
-        edge_index1.append(protein_name.index(row[1]))
-        edge_index2.append(protein_name.index(row[0]))
-    edge_index.append(edge_index1)
-    edge_index.append(edge_index2)
-    return edge_index
-
-
-def protein_encoder(df_data, column_name = 'Target Sequence', save_column_name = 'target_encoding'):
-    test=df_data[column_name].values.tolist()
-    AA,AA_mask=[],[]
-    for i in test:
-        aa,aa_mask=protein2emb_encoder(i)
-        AA.append(aa)
-        AA_mask.append(aa_mask)
-    AA=pd.Series(AA)
-    AA_mask=pd.Series(AA_mask)
-    AA_dict = dict(zip(df_data[column_name], AA))
-    AA_dict_mask=dict(zip(df_data[column_name], AA_mask))
-    df_data[save_column_name] = [AA_dict[i] for i in df_data[column_name]]
-    df_data["target_encoding_mask"]=[AA_dict_mask[i] for i in df_data[column_name]]
-
-    return df_data
-
-def read_protein():
-    df_data=pd.read_csv("./protein_sequence.csv")
-    df_interaction=pd.read_csv("./protein_interaction_new.csv")
-    return df_data,df_interaction
-
-def protein_datasets(classes_name,df_data):
-    protein_name=df_data["protein"].values.tolist()
-    item=[]
-    for i,name in enumerate(protein_name):
-        if name not in classes_name:
-            item.append(i)
-    df_data=df_data.drop(index=item,axis=0)
-    df_data.rename(columns={"protein":'protein_name',
-                            "sequence": 'protein_sequence'},
-                   inplace=True)
-    df_data=protein_encoder(df_data,"protein_sequence","protein_sequence_encoding")
-    protein_name=df_data["protein_name"].values.tolist()
-    protein_encodings=df_data["protein_sequence_encoding"].values.tolist()
-    protein_masks=df_data["target_encoding_mask"].values.tolist()
-
-    return protein_name,protein_encodings,protein_masks'''

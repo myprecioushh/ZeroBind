@@ -16,7 +16,7 @@ import torch.multiprocessing
 import datetime
 
 torch.multiprocessing.set_sharing_strategy('file_system')
-directory=["./train_roc_curve_protein_improvev15/","./zero_roc_curve_protein_improvev15/"]
+directory=["./train_roc_curve_review_v9/","./zero_roc_curve_review_v9/"]
 def cli_main():
     parser = ArgumentParser()
     parser = Meta.add_model_specific_args(parser)
@@ -37,7 +37,7 @@ def cli_main():
                         os.rmdir(os.path.join(root, name))
         wandb_logger = WandbLogger(name=args.project_name, project="GCN_maml")
         args.iteration=molecule_data.iterations
-        molecule_model = GCN_DTIMAML(args)
+        molecule_model = GCN_DTIMAML(args=args)
 
         dirpath = args.project_name+"+checkpoint"
         checkpoint_callback = ModelCheckpoint(

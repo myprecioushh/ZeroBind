@@ -8,9 +8,13 @@ import os
 import torch
 import pandas
 import warnings
-from pandas.errors import SettingWithCopyWarning
+import pickle
+from torch_geometric.data import Data
+
 from tqdm import tqdm
-warnings.simplefilter(action="ignore", category=SettingWithCopyWarning)
+
+
+pandas.set_option('mode.chained_assignment', None)
 protein_model, alphabet = esm.pretrained.esm2_t33_650M_UR50D()
 batch_converter = alphabet.get_batch_converter()
 protein_model.eval()
@@ -47,7 +51,12 @@ def adj2table(adj):
                 edge_index[1].append(j)
     return torch.tensor(edge_index,dtype=torch.long)
 def protein_graph(protein_path,pdb_ID):
-    g = construct_graph(config=config, pdb_path=protein_path+pdb_ID+".pdb")
+    file="./pickle_protein_graph/"+pdb_ID+".pkl"
+    if os.path.exists(file):
+        with open(file,"rb")as f:
+            graph=pickle.load(f)
+        return graph.edge_index,graph.x
+    g = construct_graph(config=config, pdb_path=str(protein_path)+str(pdb_ID)+".pdb")
     A = nx.to_numpy_array(g,nonedge=0,weight='distance')
     edge_index=adj2table(A)
     seq=""
@@ -57,6 +66,9 @@ def protein_graph(protein_path,pdb_ID):
     if len(seq)!=g.number_of_nodes():
         raise RuntimeError("number of nodes mismatch")
     node_feat=graph_node(pdb_ID,seq)
+    graph=Data(x=node_feat.detach(),edge_index=edge_index.detach())
+    with open("./pickle_protein_graph/"+pdb_ID+".pkl","wb")as f:
+        pickle.dump(graph, f)
 
     return edge_index,node_feat.detach()
 def covid19():
@@ -71,19 +83,19 @@ def covid19():
 def trainandtest():
     protein_graphs = {}
     protein_path = os.getcwd() + "/tmp/"
-    train_data = pandas.read_csv("./protein_train.csv")
+    train_data = pandas.read_csv("../scaffold_split/protein_train.csv")
     train_protein_ID = set(train_data["protein_ID"].values.tolist())
-    val_data = pandas.read_csv("./protein_seen_node.csv")
+    val_data = pandas.read_csv("../scaffold_split/protein_semi_inductive.csv")
     val_protein_ID = set(val_data["protein_ID"].values.tolist())
-    test_data = pandas.read_csv("./protein_inductive.csv")
+    test_data = pandas.read_csv("../scaffold_split/protein_transductive.csv")
     test_protein_ID = set(test_data["protein_ID"].values.tolist())
-    for protein_ID in tqdm(set.union(train_protein_ID,val_protein_ID)):
+    for protein_ID in tqdm(test_protein_ID):
         protein_graphs[protein_ID] = protein_graph(protein_path, protein_ID)
     return protein_graphs
 
 def pretrain_init(protein_ID):
 
-    return explan_graphs[protein_ID]
+    return protein_graphs[protein_ID]
 
 def pre_loading():
     protein_graphs = {}
@@ -102,7 +114,7 @@ def pre_loading():
     for protein_ID in tqdm(PDB_IDs):
         protein_graphs[protein_ID] = protein_graph("/amax/yxwang/GCN/v2020-other-PL/", protein_ID+"/"+protein_ID+"_protein")
     return protein_graphs
-#protein_graphs=covid19()
-#protein_graphs=trainandtest()
-explan_graphs=pre_loading()
+
+protein_graphs=trainandtest()
+
 
