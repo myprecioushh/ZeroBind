@@ -6,7 +6,7 @@ class Meta(pl.LightningModule):
 
     @staticmethod
     def add_model_specific_args(parent_parser):
-        parser = parent_parser.add_argument_group("Graphormer")
+        parser = parent_parser.add_argument_group("base")
         parser.add_argument('--weight_decay', type=float, default=1)
         parser.add_argument('--protein_dim1', type=int, default=1280)
         parser.add_argument('--protein_dim2', type=int, default=512)
@@ -37,5 +37,5 @@ class Meta(pl.LightningModule):
         parser.add_argument('--project_name', type=str, default="GCN_maml")
         parser.add_argument('--n_layers', type=int, default=6)
 
-        parser.add_argument('--checkpoint_path', type=str, default="/amax/yxwang/GCN/meta-Graphormer-update/graphormer/review_V8+checkpoint/-epoch=110-zero_auroc=0.7939-zero_loss=0.2769-.ckpt")
+        parser.add_argument('--checkpoint_path', type=str, default="")
         return parent_parser
